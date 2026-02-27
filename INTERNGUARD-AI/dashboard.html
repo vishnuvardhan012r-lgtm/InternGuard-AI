@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard — InternGuard-AI</title>
+    <meta name="description"
+        content="InternGuard-AI scam detection statistics, categories, trends and cybersecurity awareness tips for students." />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <style>
+        .dash-page {
+            padding-top: 90px;
+            min-height: 100vh;
+        }
+
+        /* ── Dash Header ── */
+        .dash-header {
+            text-align: center;
+            padding: 3rem 2rem 2rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* ── Stat Cards ── */
+        .stat-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .stat-card {
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-grad);
+        }
+
+        .stat-card.red-bot::after {
+            background: linear-gradient(90deg, #ef4444, #f97316);
+        }
+
+        .stat-card.amb-bot::after {
+            background: linear-gradient(90deg, #f59e0b, #eab308);
+        }
+
+        .stat-card.grn-bot::after {
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+        }
+
+        .stat-card.blu-bot::after {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-card-icon {
+            font-size: 2rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .stat-card-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* ── Charts section ── */
+        .charts-section {
+            max-width: 1200px;
+            margin: 3rem auto 0;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .chart-card {
+            padding: 1.8rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+        }
+
+        .chart-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .chart-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 260px;
+        }
+
+        /* ── Line chart full-width ── */
+        .trend-section {
+            max-width: 1200px;
+            margin: 1.5rem auto 0;
+            padding: 0 2rem;
+        }
+
+        .trend-chart-wrap {
+            position: relative;
+            height: 280px;
+        }
+
+        /* ── Tips grid ── */
+        .tips-section {
+            max-width: 1200px;
+            margin: 3rem auto 0;
+            padding: 0 2rem;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.2rem;
+            margin-top: 2rem;
+        }
+
+        .tip-card {
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            transition: var(--transition);
+        }
+
+        .tip-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .tip-card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .tip-card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .tip-card-text {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ── Feed ── */
+        .feed-section {
+            max-width: 1200px;
+            margin: 3rem auto 0;
+            padding: 0 2rem 6rem;
+        }
+
+        #mockFeed {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            margin-top: 1.5rem;
+        }
+
+        .feed-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.4rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            gap: 1rem;
+        }
+
+        .feed-item:hover {
+            border-color: rgba(59, 130, 246, 0.2);
+            transform: translateX(3px);
+        }
+
+        .feed-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .feed-company {
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .feed-keywords {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: none;
+        }
+
+        @media (min-width: 640px) {
+            .feed-keywords {
+                display: block;
+            }
+        }
+
+        .feed-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .feed-score {
+            font-size: 1.3rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .feed-time {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* ── Live indicator ── */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            padding: 4px 12px;
+            border-radius: 100px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.3
+            }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .stat-cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            .tips-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stat-cards-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .tips-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-canvas">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="nav-logo-icon">🛡️</div>
+            <span class="nav-logo-text">InternGuard-AI</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="analyzer.html">Analyzer</a></li>
+            <li><a href="webscan.html">Web Scanner</a></li>
+            <li><a href="reputation.html">Reputation Shield</a></li>
+            <li><a href="dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="analyzer.html" class="nav-cta">Scan Now</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-wrapper dash-page">
+
+        <!-- Header -->
+        <div class="dash-header">
+            <div class="section-tag">📊 Statistics</div>
+            <h1 class="section-title">Scam <span>Awareness Dashboard</span></h1>
+            <p class="section-sub" style="margin:0 auto;">
+                Real-time insights into internship fraud trends, detection statistics, and protection awareness.
+            </p>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stat-cards-grid">
+            <div class="stat-card red-bot fade-up">
+                <div class="stat-card-icon">🚨</div>
+                <div class="stat-card-value text-gradient">
+                    <span class="counter" data-target="247300" data-suffix="+">0</span>
+                </div>
+                <div class="stat-card-label">Scam Postings Detected</div>
+            </div>
+            <div class="stat-card amb-bot fade-up fade-up-delay-1">
+                <div class="stat-card-icon">⚠️</div>
+                <div class="stat-card-value"
+                    style="background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                    <span class="counter" data-target="83" data-suffix="%">0</span>
+                </div>
+                <div class="stat-card-label">Victims Are Students</div>
+            </div>
+            <div class="stat-card grn-bot fade-up fade-up-delay-2">
+                <div class="stat-card-icon">✅</div>
+                <div class="stat-card-value"
+                    style="background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                    <span class="counter" data-target="92" data-suffix="%">0</span>
+                </div>
+                <div class="stat-card-label">Detection Accuracy</div>
+            </div>
+            <div class="stat-card blu-bot fade-up fade-up-delay-3">
+                <div class="stat-card-icon">💸</div>
+                <div class="stat-card-value"
+                    style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                    ₹<span class="counter" data-target="4999" data-suffix=" avg">0</span>
+                </div>
+                <div class="stat-card-label">Average Loss per Victim</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-section" style="margin-top:2rem;">
+            <!-- Bar chart -->
+            <div class="chart-card fade-up">
+                <div class="chart-title">Scam Categories Breakdown</div>
+                <div class="chart-sub">Percentage of reported scam types (Annual Survey 2025-26)</div>
+                <div class="chart-wrap">
+                    <canvas id="scamCategoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Doughnut -->
+            <div class="chart-card fade-up fade-up-delay-2">
+                <div class="chart-title">Detection Weight Distribution</div>
+                <div class="chart-sub">How InternGuard-AI weights each module</div>
+                <div class="chart-wrap" style="height:280px;">
+                    <canvas id="detectionDonut"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Chart -->
+        <div class="trend-section">
+            <div class="chart-card fade-up">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:0.2rem;">
+                    <div class="chart-title">Monthly Scam Trend</div>
+                    <span class="live-badge"><span class="live-dot"></span> Simulated Live</span>
+                </div>
+                <div class="chart-sub">Scam postings vs flagged postings over the last 12 months (Apr 2025 – Mar 2026)
+                </div>
+                <div class="trend-chart-wrap">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="tips-section">
+            <div class="section-tag">💡 Safety Tips</div>
+            <h2 class="section-title fade-up">How to <span>Spot a Scam</span></h2>
+
+            <div class="tips-grid">
+                <div class="tip-card fade-up fade-up-delay-1">
+                    <div class="tip-card-icon">💰</div>
+                    <div class="tip-card-title">Never Pay to Apply</div>
+                    <div class="tip-card-text">Legitimate internships and jobs never require you to pay any
+                        registration, training, or security deposit fee. Any such request is an immediate red flag.
+                    </div>
+                </div>
+                <div class="tip-card fade-up fade-up-delay-2">
+                    <div class="tip-card-icon">📧</div>
+                    <div class="tip-card-title">Verify the Email Domain</div>
+                    <div class="tip-card-text">If a company recruiter contacts you from a Gmail, Yahoo, or Hotmail
+                        address, be very cautious. Legitimate companies use their own domain (e.g., hr@company.com).
+                    </div>
+                </div>
+                <div class="tip-card fade-up fade-up-delay-3">
+                    <div class="tip-card-icon">🌐</div>
+                    <div class="tip-card-title">Check the Website URL</div>
+                    <div class="tip-card-text">Always verify the company's official website. Watch out for suspicious
+                        TLDs (.xyz, .tk), URL shorteners, or URLs that don't match the company name.</div>
+                </div>
+                <div class="tip-card fade-up fade-up-delay-1">
+                    <div class="tip-card-icon">🔍</div>
+                    <div class="tip-card-title">Research on LinkedIn</div>
+                    <div class="tip-card-text">Search for the company and the recruiter on LinkedIn. A real company will
+                        have a verified company page with employees and an established presence.</div>
+                </div>
+                <div class="tip-card fade-up fade-up-delay-2">
+                    <div class="tip-card-icon">🚨</div>
+                    <div class="tip-card-title">Beware of Urgency</div>
+                    <div class="tip-card-text">Phrases like "Apply IMMEDIATELY," "Limited seats," or "Offer expires
+                        today" are classic pressure tactics used by scammers to prevent you from doing due diligence.
+                    </div>
+                </div>
+                <div class="tip-card fade-up fade-up-delay-3">
+                    <div class="tip-card-icon">🔒</div>
+                    <div class="tip-card-title">Guard Personal Data</div>
+                    <div class="tip-card-text">Never share Aadhaar number, PAN card, bank account details, or passport
+                        information with a recruiter until you have verified the company is legitimate and you have
+                        accepted an offer.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mock Feed -->
+        <div class="feed-section">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:0.5rem;">
+                <div class="section-tag" style="margin:0;">📡 Live Feed</div>
+                <span class="live-badge"><span class="live-dot"></span> Simulated Activity</span>
+            </div>
+            <h2 class="section-title fade-up" style="font-size:1.6rem;margin-bottom:0.3rem;">Recent
+                <span>Analyses</span>
+            </h2>
+            <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:0.5rem;">Simulated feed showing recently
+                scanned internship postings</p>
+            <div id="mockFeed"></div>
+
+            <div style="text-align:center;margin-top:2.5rem;">
+                <a href="analyzer.html" class="btn btn-primary">🔍 Analyze Your Posting</a>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2026 <span>InternGuard-AI</span> — Protecting students from internship fraud.</p>
+            <p style="margin-top:6px;">📊 Statistics are representative estimates for awareness purposes.</p>
+        </footer>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+    <script src="js/chatbot.js"></script>
+</body>
+
+</html>

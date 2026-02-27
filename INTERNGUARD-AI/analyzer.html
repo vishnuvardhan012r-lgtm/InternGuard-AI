@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Internship Analyzer — InternGuard-AI</title>
+    <meta name="description"
+        content="Analyze any internship posting for scam risks. Get an instant AI-powered risk score and detailed breakdown." />
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .analyzer-page {
+            padding-top: 90px;
+            min-height: 100vh;
+        }
+
+        .analyzer-header {
+            text-align: center;
+            padding: 3rem 2rem 2rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .analyzer-layout {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 2rem 6rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* ── Input Panel ── */
+        .input-panel {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+        }
+
+        .input-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-panel-title {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sample-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sample-btn {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 100px;
+            cursor: pointer;
+            border: 1px solid;
+            font-family: 'Inter', sans-serif;
+            transition: var(--transition);
+        }
+
+        .sample-btn-scam {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .sample-btn-scam:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .sample-btn-legit {
+            background: rgba(16, 185, 129, 0.1);
+            color: #6ee7b7;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .sample-btn-legit:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .analyze-actions {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .btn-danger-outline {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-glass);
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-danger-outline:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+
+        /* ── Result Panel ── */
+        .result-panel {
+            position: sticky;
+            top: 90px;
+        }
+
+        #resultPanel {
+            display: none;
+        }
+
+        /* Empty State */
+        #emptyState {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+            text-align: center;
+            color: var(--text-muted);
+            gap: 1rem;
+            padding: 2rem;
+        }
+
+        .empty-icon {
+            font-size: 3.5rem;
+            opacity: 0.4;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .empty-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .empty-sub {
+            font-size: 0.85rem;
+            max-width: 260px;
+        }
+
+        /* ── Result Card ── */
+        .result-card {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .verdict-hero {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+        }
+
+        .verdict-icon-wrap {
+            font-size: 2.8rem;
+        }
+
+        .verdict-info {
+            flex: 1;
+        }
+
+        .verdict-label {
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            line-height: 1.2;
+        }
+
+        .verdict-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+
+        /* ── Gauge / Speedometer Section ── */
+        .gauge-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .gauge-title {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Needle animation */
+        #speedNeedle {
+            transform-origin: 140px 140px;
+            transform: rotate(-90deg);
+            transition: transform 1.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* ── Breakdown ── */
+        .breakdown-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 0.8rem;
+        }
+
+        .breakdown-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .breakdown-label {
+            width: 90px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .breakdown-bar-wrap {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 100px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .breakdown-bar {
+            height: 100%;
+            border-radius: 100px;
+            width: 0%;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s;
+        }
+
+        .breakdown-score {
+            width: 28px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-align: right;
+            color: var(--text-secondary);
+        }
+
+        /* ── Keywords ── */
+        .kw-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 0.8rem;
+        }
+
+        #keywordChips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        /* ── Flags List ── */
+        #flagsList {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .flag-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            padding: 7px 12px;
+            border-radius: 8px;
+            border-left: 3px solid;
+        }
+
+        .flag-high {
+            background: rgba(239, 68, 68, 0.07);
+            border-color: var(--scam);
+            color: #fca5a5;
+        }
+
+        .flag-medium {
+            background: rgba(245, 158, 11, 0.07);
+            border-color: var(--suspicious);
+            color: #fcd34d;
+        }
+
+        .flag-low {
+            background: rgba(59, 130, 246, 0.07);
+            border-color: var(--accent-blue);
+            color: #93c5fd;
+        }
+
+        .flag-source {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            opacity: 0.7;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .flag-text {
+            flex: 1;
+        }
+
+        /* ── Domain Check ── */
+        .domain-check-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .domain-check-item {
+            padding: 0.8rem 1rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+        }
+
+        .domain-check-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .domain-check-value {
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        /* ── Tips ── */
+        .tip-box {
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: var(--radius-sm);
+            padding: 1rem 1.2rem;
+            font-size: 0.82rem;
+            color: #6ee7b7;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 900px) {
+            .analyzer-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .result-panel {
+                position: static;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .input-panel-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.8rem;
+            }
+
+            .sample-btns {
+                flex-wrap: wrap;
+            }
+        }
+
+        /* ── Website Scan Panel ── */
+        #websiteScanPanel {
+            display: none;
+            margin-top: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            animation: slideIn 0.4s ease;
+        }
+
+        .ws-header {
+            padding: 14px 20px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(139, 92, 246, 0.12));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 0.88rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: var(--text-primary);
+        }
+
+        .ws-loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .ws-spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .ws-section {
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .ws-section:last-child {
+            border-bottom: none;
+        }
+
+        .ws-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .ws-flag {
+            font-size: 0.82rem;
+            padding: 7px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            border-left: 3px solid;
+            line-height: 1.5;
+        }
+
+        .ws-flag-high {
+            background: rgba(239, 68, 68, 0.07);
+            border-color: var(--scam);
+            color: #fca5a5;
+        }
+
+        .ws-flag-safe {
+            background: rgba(16, 185, 129, 0.07);
+            border-color: var(--safe);
+            color: #6ee7b7;
+        }
+
+        .ws-flag-neutral {
+            background: rgba(245, 158, 11, 0.07);
+            border-color: var(--suspicious);
+            color: #fcd34d;
+        }
+
+        .ws-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 100px;
+            letter-spacing: 0.05em;
+        }
+
+        .ws-badge-safe {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--safe);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .ws-badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--scam);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .ws-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .ws-meta-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .ws-meta-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .ws-meta-val {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .ws-description {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .ws-link {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .ws-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Scan Website button */
+        .scan-web-btn {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: var(--accent-cyan);
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .scan-web-btn:hover {
+            background: rgba(6, 182, 212, 0.2);
+            border-color: rgba(6, 182, 212, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .scan-web-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Company DB Check Button ── */
+        .check-db-btn {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(139, 92, 246, 0.18));
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #c4b5fd;
+            padding: 0 14px;
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .check-db-btn:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.32), rgba(139, 92, 246, 0.32));
+            border-color: rgba(139, 92, 246, 0.7);
+            transform: translateY(-1px);
+        }
+
+        .check-db-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Company Check Result Panel ── */
+        #companyCheckResult {
+            display: none;
+            margin-top: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            animation: slideIn 0.3s ease;
+        }
+
+        .ccr-verified {
+            background: rgba(16, 185, 129, 0.09);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+
+        .ccr-legit {
+            background: rgba(59, 130, 246, 0.09);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        .ccr-unverified {
+            background: rgba(245, 158, 11, 0.09);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fcd34d;
+        }
+
+        .ccr-suspicious {
+            background: rgba(239, 68, 68, 0.09);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fdba74;
+        }
+
+        .ccr-fake {
+            background: rgba(239, 68, 68, 0.14);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+        }
+
+        .ccr-loading {
+            background: rgba(99, 102, 241, 0.09);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #c4b5fd;
+        }
+
+        .ccr-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            font-size: 0.82rem;
+        }
+
+        .ccr-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 10px;
+            border-radius: 100px;
+            letter-spacing: 0.07em;
+            border: 1px solid currentColor;
+            opacity: 0.85;
+        }
+
+        .ccr-flags {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .ccr-flag {
+            font-size: 0.78rem;
+            opacity: 0.9;
+        }
+
+        .ccr-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .ccr-link {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 100px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: inherit;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .ccr-link:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        /* ══════════════════════════════════════
+           RADAR / SONAR ANALYSIS ANIMATION
+        ══════════════════════════════════════ */
+        #analyzerRadarWrap {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 2.5rem 1rem 2rem;
+            min-height: 280px;
+        }
+
+        .az-radar-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            flex-shrink: 0;
+        }
+
+        .az-radar-container::before {
+            content: '';
+            position: absolute;
+            inset: -14px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59, 130, 246, .07) 0%, transparent 70%);
+            animation: azGlowPulse 2.6s ease-in-out infinite;
+        }
+
+        @keyframes azGlowPulse {
+
+            0%,
+            100% {
+                opacity: .55;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.07);
+            }
+        }
+
+        .az-radar-screen {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center,
+                    rgba(6, 20, 50, .96) 0%,
+                    rgba(4, 12, 36, .98) 60%,
+                    rgba(2, 8, 24, 1) 100%);
+            border: 2px solid rgba(59, 130, 246, .28);
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(59, 130, 246, .09),
+                0 0 28px rgba(59, 130, 246, .11),
+                inset 0 0 38px rgba(0, 0, 0, .55);
+        }
+
+        .az-radar-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(59, 130, 246, .11);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .az-radar-ring-1 {
+            width: 50px;
+            height: 50px;
+        }
+
+        .az-radar-ring-2 {
+            width: 100px;
+            height: 100px;
+        }
+
+        .az-radar-ring-3 {
+            width: 150px;
+            height: 150px;
+        }
+
+        .az-radar-ring-4 {
+            width: 198px;
+            height: 198px;
+            border-color: rgba(59, 130, 246, .18);
+        }
+
+        .az-radar-cross {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 198px;
+            height: 1px;
+            background: rgba(59, 130, 246, .09);
+        }
+
+        .az-radar-cross.vertical {
+            width: 1px;
+            height: 198px;
+        }
+
+        .az-radar-sweep {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 99px;
+            height: 99px;
+            margin: -99px 0 0 0;
+            transform-origin: bottom center;
+            animation: azSweep 3s linear infinite;
+        }
+
+        @keyframes azSweep {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .az-radar-beam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 99px;
+            height: 99px;
+            border-radius: 99px 0 0 0;
+            background: conic-gradient(from 270deg,
+                    rgba(59, 130, 246, 0) 0deg,
+                    rgba(59, 130, 246, .05) 20deg,
+                    rgba(59, 130, 246, .20) 60deg,
+                    rgba(99, 165, 255, .52) 88deg,
+                    rgba(59, 130, 246, 0) 90deg);
+        }
+
+        .az-radar-sweep::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 2px;
+            height: 99px;
+            background: linear-gradient(to top, rgba(99, 179, 255, .88), transparent);
+            border-radius: 1px;
+            transform-origin: bottom right;
+        }
+
+        .az-radar-blip {
+            position: absolute;
+            border-radius: 50%;
+            animation: azBlipFade 3s ease-out infinite;
+        }
+
+        .az-radar-blip::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: .28;
+            animation: azBlipRipple 3s ease-out infinite;
+        }
+
+        @keyframes azBlipFade {
+            0% {
+                opacity: 0;
+                transform: scale(.4);
+            }
+
+            15% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            70% {
+                opacity: .55;
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes azBlipRipple {
+            0% {
+                transform: scale(1);
+                opacity: .28;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+
+        .az-radar-blip-1 {
+            width: 6px;
+            height: 6px;
+            top: 30%;
+            left: 60%;
+            background: #10b981;
+            animation-delay: 0s;
+        }
+
+        .az-radar-blip-2 {
+            width: 5px;
+            height: 5px;
+            top: 60%;
+            left: 33%;
+            background: #ef4444;
+            animation-delay: .9s;
+        }
+
+        .az-radar-blip-3 {
+            width: 5px;
+            height: 5px;
+            top: 44%;
+            left: 70%;
+            background: #f59e0b;
+            animation-delay: 1.6s;
+        }
+
+        .az-radar-blip-4 {
+            width: 4px;
+            height: 4px;
+            top: 70%;
+            left: 58%;
+            background: #3b82f6;
+            animation-delay: 2.3s;
+        }
+
+        .az-radar-blip-5 {
+            width: 4px;
+            height: 4px;
+            top: 24%;
+            left: 42%;
+            background: #10b981;
+            animation-delay: 2.0s;
+        }
+
+        .az-radar-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, .8);
+            box-shadow: 0 0 7px rgba(59, 130, 246, .7);
+        }
+
+        .az-radar-status {
+            text-align: center;
+        }
+
+        .az-radar-title {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: .04em;
+            margin-bottom: 4px;
+        }
+
+        .az-radar-sub {
+            font-size: .7rem;
+            color: var(--text-muted);
+            animation: azTextPulse 1.9s ease-in-out infinite;
+        }
+
+        @keyframes azTextPulse {
+
+            0%,
+            100% {
+                opacity: .45;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-canvas">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="nav-logo-icon">🛡️</div>
+            <span class="nav-logo-text">InternGuard-AI</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="analyzer.html" class="active">Analyzer</a></li>
+            <li><a href="webscan.html">Web Scanner</a></li>
+            <li><a href="reputation.html">Reputation Shield</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="analyzer.html" class="nav-cta">Scan Now</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-wrapper analyzer-page">
+        <!-- Header -->
+        <div class="analyzer-header">
+            <div class="section-tag">🔍 AI Analyzer</div>
+            <h1 class="section-title">Internship <span>Scam Detector</span></h1>
+            <p class="section-sub" style="margin: 0 auto;">Paste any job posting below and let our AI analyze it across
+                5 detection modules to give you an instant risk score.</p>
+        </div>
+
+        <!-- Main layout -->
+        <div class="analyzer-layout">
+            <!-- Left: Input Panel -->
+            <div class="glass-card input-panel">
+                <div class="input-panel-header">
+                    <div class="input-panel-title">📋 Internship Details</div>
+                    <div class="sample-btns">
+                        <button class="sample-btn sample-btn-scam" id="sampleScamBtn">🚨 Try Scam Sample</button>
+                        <button class="sample-btn sample-btn-legit" id="sampleLegitBtn">✅ Try Legit Sample</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="jobText">Job Description / Email Content *</label>
+                    <textarea class="form-textarea" id="jobText" rows="10"
+                        placeholder="Paste the full internship description, email content, or any suspicious message here...">
+          </textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="companyName">Company Name</label>
+                        <div style="display:flex;gap:8px;">
+                            <input class="form-input" type="text" id="companyName" placeholder="e.g. Infosys Limited"
+                                style="flex:1;" autocomplete="organization" />
+                            <button class="check-db-btn" id="checkCompanyBtn" type="button"
+                                title="Check company registration status across databases">
+                                🔎 Check DB
+                            </button>
+                        </div>
+                        <div id="companyCheckResult"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="recruiterEmail">Recruiter Email</label>
+                        <input class="form-input" type="email" id="recruiterEmail" placeholder="e.g. hr@company.com" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="companyUrl">Company / Job Posting URL</label>
+                    <div style="display:flex;gap:8px;">
+                        <input class="form-input" type="url" id="companyUrl"
+                            placeholder="https://www.company.com/careers/" style="flex:1;" />
+                        <button class="scan-web-btn" id="scanWebBtn" type="button"
+                            title="Fetch & scan the website in real-time">🌐 Scan Website</button>
+                    </div>
+                </div>
+
+                <div class="analyze-actions">
+                    <button class="btn btn-primary" id="analyzeBtn" style="flex:1;justify-content:center;"
+                        type="button">
+                        <div class="spinner" id="analyzeSpinner"></div>
+                        <span id="analyzeBtnText">🔍 Analyze Now</span>
+                    </button>
+                    <button class="btn-danger-outline" id="clearBtn" type="button">↺ Clear</button>
+                </div>
+
+                <!-- Info strip -->
+                <div
+                    style="display:flex;gap:1.5rem;padding-top:0.5rem;border-top:1px solid var(--border-glass);flex-wrap:wrap;">
+                    <div style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:5px;">🔒
+                        Runs entirely in your browser</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:5px;">⚡ No
+                        data is sent to any server</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:5px;">🆓
+                        Completely free</div>
+                </div>
+            </div>
+
+            <!-- Right: Result Panel -->
+            <div class="result-panel">
+                <!-- Radar animation shown during analysis -->
+                <div class="glass-card" id="analyzerRadarWrap">
+                    <div class="az-radar-container">
+                        <div class="az-radar-screen">
+                            <div class="az-radar-ring az-radar-ring-1"></div>
+                            <div class="az-radar-ring az-radar-ring-2"></div>
+                            <div class="az-radar-ring az-radar-ring-3"></div>
+                            <div class="az-radar-ring az-radar-ring-4"></div>
+                            <div class="az-radar-cross"></div>
+                            <div class="az-radar-cross vertical"></div>
+                            <div class="az-radar-sweep">
+                                <div class="az-radar-beam"></div>
+                            </div>
+                            <div class="az-radar-blip az-radar-blip-1"></div>
+                            <div class="az-radar-blip az-radar-blip-2"></div>
+                            <div class="az-radar-blip az-radar-blip-3"></div>
+                            <div class="az-radar-blip az-radar-blip-4"></div>
+                            <div class="az-radar-blip az-radar-blip-5"></div>
+                            <div class="az-radar-center"></div>
+                        </div>
+                    </div>
+                    <div class="az-radar-status">
+                        <div class="az-radar-title">🧠 AI Analysis in Progress</div>
+                        <div class="az-radar-sub" id="analyzerRadarLbl">Initialising detection engine…</div>
+                    </div>
+                </div>
+
+                <!-- Empty state -->
+                <div class="glass-card" id="emptyState">
+                    <div class="empty-icon">🛡️</div>
+                    <div class="empty-title">Ready to Analyze</div>
+                    <div class="empty-sub">Paste an internship posting on the left and click "Analyze Now" to get your
+                        risk report.</div>
+                    <div style="margin-top:1rem;display:flex;flex-direction:column;gap:6px;">
+                        <div
+                            style="font-size:0.75rem;color:var(--text-muted);padding:6px 14px;background:rgba(255,255,255,0.03);border-radius:8px;">
+                            ✅ Safe — Risk Score 0–29</div>
+                        <div
+                            style="font-size:0.75rem;color:var(--text-muted);padding:6px 14px;background:rgba(255,255,255,0.03);border-radius:8px;">
+                            ⚠️ Suspicious — Risk Score 30–59</div>
+                        <div
+                            style="font-size:0.75rem;color:var(--text-muted);padding:6px 14px;background:rgba(255,255,255,0.03);border-radius:8px;">
+                            🚨 Scam — Risk Score 60–100</div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="glass-card result-card" id="resultPanel">
+                    <!-- Verdict Hero -->
+                    <div class="verdict-hero">
+                        <div class="verdict-icon-wrap" id="verdictIcon">🛡️</div>
+                        <div class="verdict-info">
+                            <div class="verdict-label" id="verdictLabel">—</div>
+                            <div class="verdict-desc" id="verdictDesc">—</div>
+                        </div>
+                    </div>
+
+                    <!-- Speedometer Gauge -->
+                    <div class="gauge-section">
+                        <div class="gauge-title">Risk Score</div>
+                        <!--
+                          Speedometer: semicircle from 180° to 0° (left to right)
+                          Center: (140, 140), Radius track: 110
+                          Needle pivot at (140, 140), points up at -90° (score=0) → +90° (score=100)
+                          ViewBox: 30 30 220 130  (shows top half + center)
+                        -->
+                        <svg id="gaugeSvg" width="260" height="155" viewBox="30 30 220 130" style="overflow:visible;">
+                            <defs>
+                                <!-- Safe zone gradient -->
+                                <linearGradient id="zoneGrad" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stop-color="#10b981" />
+                                    <stop offset="40%" stop-color="#10b981" />
+                                    <stop offset="55%" stop-color="#f59e0b" />
+                                    <stop offset="70%" stop-color="#f59e0b" />
+                                    <stop offset="100%" stop-color="#ef4444" />
+                                </linearGradient>
+                                <!-- Glow filter for needle -->
+                                <filter id="needleGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="2" result="blur" />
+                                    <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                                <!-- Neon glow filter for score number -->
+                                <filter id="scoreGlow" x="-60%" y="-60%" width="220%" height="220%">
+                                    <feFlood id="neonFlood" flood-color="#10b981" flood-opacity="1" result="color" />
+                                    <feComposite in="color" in2="SourceGraphic" operator="in" result="coloredBlur" />
+                                    <feGaussianBlur in="coloredBlur" stdDeviation="6" result="glow1" />
+                                    <feGaussianBlur in="coloredBlur" stdDeviation="12" result="glow2" />
+                                    <feMerge>
+                                        <feMergeNode in="glow2" />
+                                        <feMergeNode in="glow1" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+
+                            <!-- Track background (grey semicircle) -->
+                            <path d="M 30 140 A 110 110 0 0 1 250 140" fill="none" stroke="rgba(255,255,255,0.07)"
+                                stroke-width="18" stroke-linecap="round" />
+
+                            <!-- Colored zone arc (green → yellow → red) -->
+                            <path id="gaugeZoneArc" d="M 30 140 A 110 110 0 0 1 250 140" fill="none"
+                                stroke="url(#zoneGrad)" stroke-width="18" stroke-linecap="round"
+                                style="stroke-dasharray: 0 346; transition: stroke-dasharray 1.3s cubic-bezier(0.4,0,0.2,1);" />
+
+                            <!-- Tick marks (11 ticks: 0,10,20,...,100) -->
+                            <g id="ticks" stroke="rgba(255,255,255,0.25)" stroke-width="1.5">
+                                <!-- generated by JS via initSpeedometer() -->
+                            </g>
+
+                            <!-- Tick labels -->
+                            <g id="tickLabels" fill="rgba(255,255,255,0.35)" font-size="8" text-anchor="middle"
+                                font-family="Inter,sans-serif">
+                            </g>
+
+                            <!-- Zone labels -->
+                            <text x="52" y="158" fill="#10b981" font-size="9" font-family="Inter,sans-serif"
+                                font-weight="700" text-anchor="middle">SAFE</text>
+                            <text x="140" y="162" fill="#f59e0b" font-size="9" font-family="Inter,sans-serif"
+                                font-weight="700" text-anchor="middle">SUSPICIOUS</text>
+                            <text x="228" y="158" fill="#ef4444" font-size="9" font-family="Inter,sans-serif"
+                                font-weight="700" text-anchor="middle">SCAM</text>
+
+                            <!-- Score text (drawn BEFORE needle so needle appears on top) -->
+                            <text id="gaugeNumber" x="140" y="120" fill="#10b981" font-size="30" font-weight="800"
+                                text-anchor="middle" dominant-baseline="auto" font-family="Inter,sans-serif"
+                                filter="url(#scoreGlow)">0</text>
+                            <text x="140" y="132" fill="rgba(255,255,255,0.45)" font-size="7.5" text-anchor="middle"
+                                font-family="Inter,sans-serif" letter-spacing="1">OUT OF 100</text>
+
+                            <!-- Needle -->
+                            <g id="speedNeedle" filter="url(#needleGlow)">
+                                <!-- Needle body -->
+                                <polygon points="140,50 136,138 144,138" fill="white" opacity="0.95" />
+                                <!-- Needle shadow for depth -->
+                                <polygon points="140,50 137,138 140,138" fill="rgba(0,0,0,0.3)" opacity="0.5" />
+                            </g>
+                            <!-- Hub circle (always on top) -->
+                            <circle cx="140" cy="140" r="9" fill="#1e2a4a" stroke="rgba(255,255,255,0.3)"
+                                stroke-width="2" />
+                            <circle cx="140" cy="140" r="4" fill="white" opacity="0.9" />
+                        </svg>
+                    </div>
+                    <div class="divider"></div>
+
+                    <!-- Breakdown -->
+                    <div>
+                        <div class="breakdown-title">Detection Module Scores</div>
+                        <div class="breakdown-row">
+                            <div class="breakdown-label">Keywords</div>
+                            <div class="breakdown-bar-wrap">
+                                <div class="breakdown-bar" id="barKeywords"></div>
+                            </div>
+                            <div class="breakdown-score" id="scoreKeywords">0</div>
+                        </div>
+                        <div class="breakdown-row">
+                            <div class="breakdown-label">URL</div>
+                            <div class="breakdown-bar-wrap">
+                                <div class="breakdown-bar" id="barUrl"></div>
+                            </div>
+                            <div class="breakdown-score" id="scoreUrl">0</div>
+                        </div>
+                        <div class="breakdown-row">
+                            <div class="breakdown-label">Email</div>
+                            <div class="breakdown-bar-wrap">
+                                <div class="breakdown-bar" id="barEmail"></div>
+                            </div>
+                            <div class="breakdown-score" id="scoreEmail">0</div>
+                        </div>
+                        <div class="breakdown-row">
+                            <div class="breakdown-label">Content</div>
+                            <div class="breakdown-bar-wrap">
+                                <div class="breakdown-bar" id="barText"></div>
+                            </div>
+                            <div class="breakdown-score" id="scoreText">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Domain & Email -->
+                    <div class="domain-check-grid">
+                        <div class="domain-check-item">
+                            <div class="domain-check-label">URL Verdict</div>
+                            <div class="domain-check-value" id="urlVerdict">—</div>
+                        </div>
+                        <div class="domain-check-item">
+                            <div class="domain-check-label">Email Verdict</div>
+                            <div class="domain-check-value" id="emailVerdict">—</div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Flagged Keywords -->
+                    <div>
+                        <div class="kw-section-title">🔴 Flagged Keywords</div>
+                        <div id="keywordChips"></div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- All Flags -->
+                    <div>
+                        <div class="kw-section-title">📋 All Red Flags Detected</div>
+                        <ul id="flagsList"></ul>
+                    </div>
+
+                    <!-- Tip -->
+                    <div class="tip-box">
+                        💡 <strong>Tip:</strong> Even if a listing scores as "Safe," always independently verify the
+                        company on LinkedIn, official government portals, or company websites before sharing personal
+                        information or making any payments.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Website Scan Results -->
+        <div style="max-width:1240px;margin:0 auto;padding:0 2rem;">
+            <div id="websiteScanPanel"></div>
+        </div>
+
+        <footer>
+            <p>© 2026 <span>InternGuard-AI</span> — Protecting students from internship fraud.</p>
+        </footer>
+    </div>
+
+    <script src="js/analyzer.js"></script>
+    <script src="js/chatbot.js"></script>
+</body>
+
+</html>

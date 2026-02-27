@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reputation Shield™ — InternGuard-AI</title>
+    <meta name="description"
+        content="Search any internship, company, recruiter email, or UPI ID to instantly check its scam reputation. Powered by community reports and AI scoring." />
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        /* ── Page-level vars ── */
+        :root {
+            --shield-safe: #10b981;
+            --shield-suspicious: #f59e0b;
+            --shield-scam: #ef4444;
+        }
+
+        /* ── Hero Search ── */
+        .rs-hero {
+            min-height: 52vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 110px 2rem 3rem;
+        }
+
+        .rs-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 7px 18px;
+            border-radius: 100px;
+            margin-bottom: 1.5rem;
+        }
+
+        .rs-pulse {
+            width: 7px;
+            height: 7px;
+            background: var(--shield-scam);
+            border-radius: 50%;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        .rs-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+
+        .rs-hero p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 520px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7;
+        }
+
+        /* ── Search Box ── */
+        .rs-search-wrap {
+            width: 100%;
+            max-width: 700px;
+            position: relative;
+        }
+
+        .rs-search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(15, 25, 60, 0.8);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 6px 6px 6px 20px;
+            gap: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(20px);
+        }
+
+        .rs-search-box:focus-within {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 8px 40px rgba(59, 130, 246, 0.15);
+        }
+
+        .rs-search-icon {
+            font-size: 1.2rem;
+            opacity: 0.6;
+            flex-shrink: 0;
+        }
+
+        .rs-search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            padding: 10px 0;
+        }
+
+        .rs-search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .rs-search-btn {
+            background: var(--accent-grad);
+            color: white;
+            border: none;
+            border-radius: 11px;
+            padding: 12px 28px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .rs-search-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
+        }
+
+        .rs-search-hints {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .rs-hint-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 5px 14px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .rs-hint-chip:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        /* ── Results Panel ── */
+        .rs-results-section {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 2rem 3rem;
+        }
+
+        .rs-result-card {
+            border-radius: 20px;
+            padding: 2rem 2.2rem;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid var(--border-glass);
+            animation: slideUp 0.5s ease both;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rs-result-card.result-safe {
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .rs-result-card.result-suspicious {
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .rs-result-card.result-scam {
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .rs-result-card.result-safe::before {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), transparent);
+        }
+
+        .rs-result-card.result-suspicious::before {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), transparent);
+        }
+
+        .rs-result-card.result-scam::before {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), transparent);
+        }
+
+        .rs-result-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rs-result-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.4rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .rs-verdict-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 110px;
+            padding: 1rem 1.4rem;
+            border-radius: 14px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .rs-verdict-badge.badge-safe {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .rs-verdict-badge.badge-suspicious {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .rs-verdict-badge.badge-scam {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+
+        .rs-verdict-emoji {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .rs-verdict-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .badge-safe .rs-verdict-label {
+            color: var(--shield-safe);
+        }
+
+        .badge-suspicious .rs-verdict-label {
+            color: var(--shield-suspicious);
+        }
+
+        .badge-scam .rs-verdict-label {
+            color: var(--shield-scam);
+        }
+
+        .rs-result-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .rs-result-company {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .rs-result-domain {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+            word-break: break-all;
+        }
+
+        .rs-legal-note {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 8px 14px;
+            line-height: 1.5;
+            margin-top: 0.5rem;
+        }
+
+        /* ── Intelligence Stats Grid ── */
+        .rs-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .rs-stat-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .rs-stat-val {
+            font-size: 1.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .rs-stat-lbl {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 3px;
+        }
+
+        /* ── Confidence Bar ── */
+        .rs-confidence-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0.8rem 0;
+        }
+
+        .rs-confidence-label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            min-width: 130px;
+        }
+
+        .rs-confidence-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .rs-confidence-fill {
+            height: 100%;
+            border-radius: 100px;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .rs-confidence-pct {
+            font-size: 0.85rem;
+            font-weight: 700;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        /* ── Surge Alert ── */
+        .rs-surge-alert {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin: 1rem 0;
+            animation: surgePulse 2s ease infinite;
+        }
+
+        @keyframes surgePulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+
+            50% {
+                box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+            }
+        }
+
+        .rs-surge-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .rs-surge-text strong {
+            color: var(--shield-scam);
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .rs-surge-text span {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ── Flag Chips ── */
+        .rs-flags-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 1rem 0;
+        }
+
+        .rs-flag-chip {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 5px 14px;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rs-flag-chip .flag-pct {
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 100px;
+            padding: 1px 7px;
+            font-weight: 700;
+            font-size: 0.72rem;
+        }
+
+        /* ── Match Type Pill ── */
+        .rs-match-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 3px 12px;
+            border-radius: 100px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #93c5fd;
+        }
+
+        /* ── Not Found State ── */
+        .rs-not-found {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            animation: slideUp 0.5s ease both;
+        }
+
+        .rs-not-found-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .rs-not-found h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .rs-not-found p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* ── Community Reports ── */
+        .rs-community {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
+        }
+
+        .rs-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.2rem;
+        }
+
+        .rs-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .rs-live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            color: #fca5a5;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-weight: 600;
+        }
+
+        .rs-live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--shield-scam);
+            border-radius: 50%;
+            animation: pulse 1.4s ease infinite;
+        }
+
+        .rs-community-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .rs-community-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 1rem 1.4rem;
+            transition: all 0.25s;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .rs-community-item:hover {
+            border-color: rgba(59, 130, 246, 0.25);
+            background: rgba(15, 25, 60, 0.8);
+            transform: translateX(4px);
+        }
+
+        .rs-community-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .rs-community-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot-safe {
+            background: var(--shield-safe);
+            box-shadow: 0 0 8px var(--shield-safe);
+        }
+
+        .dot-suspicious {
+            background: var(--shield-suspicious);
+            box-shadow: 0 0 8px var(--shield-suspicious);
+        }
+
+        .dot-scam {
+            background: var(--shield-scam);
+            box-shadow: 0 0 8px var(--shield-scam);
+            animation: pulse 1.5s ease infinite;
+        }
+
+        .rs-community-name {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .rs-community-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .rs-community-count {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        /* ── Submit Form ── */
+        .rs-form-section {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 0 2rem 6rem;
+        }
+
+        .rs-form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+        }
+
+        .rs-form-header {
+            margin-bottom: 2rem;
+        }
+
+        .rs-form-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+        }
+
+        .rs-form-sub {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .rs-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+
+        .rs-form-full {
+            grid-column: 1 / -1;
+        }
+
+        .rs-checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-top: 0.6rem;
+        }
+
+        .rs-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .rs-checkbox-item input[type="checkbox"] {
+            accent-color: var(--accent-blue);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .rs-checkbox-item span {
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+        }
+
+        .rs-proof-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: rgba(59, 130, 246, 0.06);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .rs-proof-toggle input[type="checkbox"] {
+            accent-color: var(--accent-blue);
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .rs-proof-toggle-text strong {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .rs-proof-toggle-text span {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .rs-submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent-grad);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .rs-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .rs-submit-success {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            animation: slideUp 0.5s ease;
+        }
+
+        .rs-submit-success .success-emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .rs-submit-success h4 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .rs-submit-success p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* ── Divider row ── */
+        .rs-divider {
+            border: none;
+            border-top: 1px solid var(--border-glass);
+            margin: 1.5rem 0;
+        }
+
+        /* ── Cluster Info ── */
+        .rs-cluster-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            background: rgba(139, 92, 246, 0.07);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 10px;
+            padding: 10px 16px;
+            margin-top: 0.8rem;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 700px) {
+            .rs-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .rs-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .rs-checkbox-group {
+                grid-template-columns: 1fr;
+            }
+
+            .rs-result-header {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background -->
+    <div class="bg-canvas">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="nav-logo-icon">🛡️</div>
+            <span class="nav-logo-text">InternGuard-AI</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="analyzer.html">Analyzer</a></li>
+            <li><a href="webscan.html">Web Scanner</a></li>
+            <li><a href="reputation.html" class="active">Reputation Shield</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="analyzer.html" class="nav-cta">Scan Now</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-wrapper">
+
+        <!-- ── Hero Search ── -->
+        <section class="rs-hero">
+            <div class="rs-eyebrow">
+                <div class="rs-pulse"></div>
+                Community Scam Intelligence
+            </div>
+
+            <h1>
+                <span class="text-gradient">Reputation Shield™</span><br>
+                Know Before You Apply
+            </h1>
+            <p>
+                Search any company, domain, recruiter email, phone, or UPI ID to instantly see its
+                community-verified scam reputation — powered by weighted AI scoring.
+            </p>
+
+            <div class="rs-search-wrap">
+                <div class="rs-search-box">
+                    <span class="rs-search-icon">🔍</span>
+                    <input type="text" class="rs-search-input" id="rsSearchInput"
+                        placeholder="Company name, domain, email, UPI ID or phone…" autocomplete="off" />
+                    <button class="rs-search-btn" id="rsSearchBtn">Check Reputation</button>
+                </div>
+
+                <div class="rs-search-hints">
+                    <span class="rs-hint-chip" onclick="quickSearch('TechVision Pvt Ltd')">TechVision Pvt Ltd</span>
+                    <span class="rs-hint-chip" onclick="quickSearch('FutureTech Internships')">FutureTech
+                        Internships</span>
+                    <span class="rs-hint-chip"
+                        onclick="quickSearch('techvision-internships.com')">techvision-internships.com</span>
+                    <span class="rs-hint-chip" onclick="quickSearch('TCS Talent Connect')">TCS Talent Connect</span>
+                    <span class="rs-hint-chip" onclick="quickSearch('SkillUp Pro Academy')">SkillUp Pro Academy</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Results Panel ── -->
+        <section class="rs-results-section" id="rsResultsSection" style="display:none;">
+            <div id="rsResultsInner"></div>
+        </section>
+
+        <!-- ── Community Reports ── -->
+        <section class="rs-community">
+            <div class="rs-section-header">
+                <div class="rs-section-title">🕵️ Recent Community Flags</div>
+                <div class="rs-live-badge">
+                    <div class="rs-live-dot"></div> Live Feed
+                </div>
+            </div>
+
+            <div class="rs-community-list" id="rsCommunityList">
+                <!-- populated by JS -->
+            </div>
+        </section>
+
+        <!-- ── Divider ── -->
+        <div style="max-width:900px;margin:0 auto;padding:0 2rem;">
+            <hr class="rs-divider">
+        </div>
+
+        <!-- ── Submit Form ── -->
+        <section class="rs-form-section" id="rsReportSection">
+            <div style="text-align:center;margin-bottom:2.5rem;">
+                <div class="section-tag">📢 Community Action</div>
+                <h2 class="section-title">Report a Suspicious<br><span>Internship or Recruiter</span></h2>
+                <p
+                    style="color:var(--text-secondary);max-width:480px;margin:1rem auto 0;line-height:1.7;font-size:0.95rem;">
+                    Your report strengthens the community shield. Every verified report makes our intelligence smarter
+                    and protects more students.
+                </p>
+            </div>
+
+            <div class="rs-form-card">
+                <div id="rsFormInner">
+                    <div class="rs-form-header">
+                        <div class="rs-form-title">Submit a Report</div>
+                        <div class="rs-form-sub">
+                            ⚖️ Your report will be labelled as "reported as suspicious by community users". Reports
+                            improve accuracy with verification.
+                        </div>
+                    </div>
+
+                    <form id="rsReportForm" novalidate>
+                        <div class="rs-form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Company / Organization Name *</label>
+                                <input type="text" class="form-input" id="rf-company"
+                                    placeholder="e.g. TechVision Pvt Ltd" required />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Website / Domain</label>
+                                <input type="text" class="form-input" id="rf-domain"
+                                    placeholder="e.g. techvision-internships.com" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Recruiter Email</label>
+                                <input type="email" class="form-input" id="rf-email"
+                                    placeholder="e.g. hr@company.com" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-input" id="rf-phone" placeholder="e.g. 9876543210" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">UPI ID (if payment was demanded)</label>
+                                <input type="text" class="form-input" id="rf-upi" placeholder="e.g. company.hr@paytm" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Red Flags Experienced</label>
+                                <div class="rs-checkbox-group">
+                                    <label class="rs-checkbox-item">
+                                        <input type="checkbox" name="flags" value="upfront_payment" />
+                                        <span>💰 Upfront Payment</span>
+                                    </label>
+                                    <label class="rs-checkbox-item">
+                                        <input type="checkbox" name="flags" value="upi_transfer" />
+                                        <span>📱 UPI Transfer Asked</span>
+                                    </label>
+                                    <label class="rs-checkbox-item">
+                                        <input type="checkbox" name="flags" value="fake_offer_letter" />
+                                        <span>📄 Fake Offer Letter</span>
+                                    </label>
+                                    <label class="rs-checkbox-item">
+                                        <input type="checkbox" name="flags" value="impersonation" />
+                                        <span>🎭 Impersonating Company</span>
+                                    </label>
+                                    <label class="rs-checkbox-item">
+                                        <input type="checkbox" name="flags" value="aadhaar_request" />
+                                        <span>🪪 Aadhaar / PAN Asked</span>
+                                    </label>
+                                    <label class="rs-checkbox-item">
+                                        <input type="checkbox" name="flags" value="urgency_pressure" />
+                                        <span>⏰ Urgency Pressure</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group rs-form-full">
+                                <label class="rs-proof-toggle">
+                                    <input type="checkbox" id="rf-proof" />
+                                    <div class="rs-proof-toggle-text">
+                                        <strong>📎 I have payment proof / screenshots</strong>
+                                        <span>Uploading proof increases your report weight by +20 points.</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div class="form-group rs-form-full">
+                                <label class="form-label">Describe what happened (optional)</label>
+                                <textarea class="form-textarea" id="rf-desc" rows="4"
+                                    placeholder="Share your experience — this helps other students recognize the same scam..."></textarea>
+                            </div>
+                        </div>
+
+                        <div
+                            style="font-size:0.78rem;color:var(--text-muted);line-height:1.6;margin-top:1rem;padding:12px 16px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border-glass);">
+                            ⚖️ <strong>Legal Note:</strong> Your report will be published as "This internship has been
+                            reported as suspicious by community users." Companies may request a review. InternGuard-AI
+                            does not independently verify all reports. Report accuracy improves as more users
+                            contribute.
+                        </div>
+
+                        <button type="submit" class="rs-submit-btn" id="rsSubmitBtn">
+                            🚨 Submit Report
+                        </button>
+                    </form>
+                </div>
+
+                <div class="rs-submit-success" id="rsSubmitSuccess">
+                    <div class="success-emoji">✅</div>
+                    <h4>Report Submitted</h4>
+                    <p>Thank you for protecting the community. Your report has been recorded and will contribute to the
+                        reputation score when others search this company.</p>
+                    <button class="btn btn-outline" style="margin-top:1.5rem;" onclick="resetForm()">Submit Another
+                        Report</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Footer ── -->
+        <footer>
+            <p>© 2026 <span>InternGuard-AI</span> — Built to protect students from internship fraud.</p>
+            <p style="margin-top:6px;">🛡️ AI-Powered &nbsp;|&nbsp; 🔒 Community-Verified &nbsp;|&nbsp; ⚖️ Legally
+                Responsible Reporting</p>
+        </footer>
+    </div>
+
+    <script src="js/reputation.js"></script>
+    <script>
+        /* ── Navbar scroll ── */
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 30);
+        });
+
+        /* ── Quick search from hint chips ── */
+        function quickSearch(q) {
+            document.getElementById('rsSearchInput').value = q;
+            doSearch();
+        }
+
+        /* ── Search trigger ── */
+        document.getElementById('rsSearchBtn').addEventListener('click', doSearch);
+        document.getElementById('rsSearchInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doSearch();
+        });
+
+        function doSearch() {
+            const q = document.getElementById('rsSearchInput').value.trim();
+            if (!q) return;
+            const result = ReputationEngine.search(q);
+            renderResult(result);
+            document.getElementById('rsResultsSection').style.display = 'block';
+            document.getElementById('rsResultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        /* ── Render Result ── */
+        function renderResult(result) {
+            const el = document.getElementById('rsResultsInner');
+
+            if (!result || !result.found) {
+                el.innerHTML = `
+          <div class="rs-not-found">
+            <div class="rs-not-found-emoji">🟢</div>
+            <h3>No Scam Reports Found</h3>
+            <p>We have no community reports matching <strong>"${escHtml(result?.query || '')}"</strong>.<br>
+            This does not guarantee safety — always stay cautious.<br>If you've been scammed, submit a report below.</p>
+          </div>`;
+                return;
+            }
+
+            const { entry, classification, reputationScore, surge, topFlags, totalReports, verifiedReports,
+                firstReport, similarClusters, paymentPercent, matchType } = result;
+
+            const matchTypeLabels = {
+                domain: '🌐 Domain Match',
+                domain_partial: '🌐 Partial Domain Match',
+                email: '📧 Email Match',
+                upi: '📱 UPI ID Match',
+                phone: '📞 Phone Match',
+                company_exact: '🏢 Exact Company Match',
+                company_partial: '🏢 Partial Company Match',
+                fuzzy: '🔎 Fuzzy Name Match'
+            };
+
+            const clsColor = { safe: '#10b981', suspicious: '#f59e0b', scam: '#ef4444' }[classification.cls];
+            const gradMap = { safe: '#10b981,#059669', suspicious: '#f59e0b,#d97706', scam: '#ef4444,#dc2626' };
+
+            const surgeHtml = surge.isSurge ? `
+        <div class="rs-surge-alert">
+          <div class="rs-surge-icon">⚠️</div>
+          <div class="rs-surge-text">
+            <strong>Surge Detected — ${surge.recent} new reports in last 7 days</strong>
+            <span>Reports have ${surge.prior === 0 ? 'spiked from zero' : `increased ${Math.round(surge.recent / surge.prior)}× vs previous week`}. Active scam campaign likely.</span>
+          </div>
+        </div>` : '';
+
+            const flagsHtml = topFlags.length ? `
+        <div class="rs-flags-row">
+          ${topFlags.map(([flag, pct]) => `
+            <div class="rs-flag-chip">
+              ${ReputationEngine.FLAG_LABELS[flag] || flag}
+              <span class="flag-pct">${pct}%</span>
+            </div>`).join('')}
+        </div>` : '';
+
+            const clusterHtml = similarClusters > 0 ? `
+        <div class="rs-cluster-info">
+          🔁 Linked to <strong>${similarClusters} similar scam operation${similarClusters > 1 ? 's' : ''}</strong> — same UPI or network cluster detected.
+        </div>` : '';
+
+            const confidencePct = Math.min(99, reputationScore);
+            const matchLabel = matchTypeLabels[matchType] || matchType;
+
+            el.innerHTML = `
+        <div class="rs-result-card result-${classification.cls}">
+          <div class="rs-result-header">
+            <div class="rs-verdict-badge badge-${classification.cls}">
+              <div class="rs-verdict-emoji">${classification.emoji}</div>
+              <div class="rs-verdict-label">${classification.label}</div>
+            </div>
+            <div class="rs-result-info">
+              <div class="rs-result-company">${escHtml(entry.companyName)}</div>
+              <div class="rs-result-domain">🌐 ${escHtml(entry.domain)}</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <div class="rs-match-pill">${matchLabel}</div>
+                ${entry.domainAgeDays !== null && entry.domainAgeDays < 30 ? `<div class="rs-match-pill" style="background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3);color:#fca5a5;">🚨 Domain ${entry.domainAgeDays} days old</div>` : ''}
+                ${entry.psychManipulation ? `<div class="rs-match-pill" style="background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.3);color:#fcd34d;">⚠️ Psych Manipulation</div>` : ''}
+              </div>
+              <div class="rs-legal-note">
+                ℹ️ This internship / recruiter has been <strong>reported as suspicious by community users</strong>. InternGuard-AI does not independently verify all claims. Report accuracy improves as more users contribute.
+              </div>
+            </div>
+          </div>
+
+          ${surgeHtml}
+
+          <!-- Stats Grid -->
+          <div class="rs-stats-grid">
+            <div class="rs-stat-box">
+              <div class="rs-stat-val" style="color:${clsColor};">${confidencePct}%</div>
+              <div class="rs-stat-lbl">🔴 Scam Confidence</div>
+            </div>
+            <div class="rs-stat-box">
+              <div class="rs-stat-val">${totalReports}</div>
+              <div class="rs-stat-lbl">👥 Community Reports</div>
+            </div>
+            <div class="rs-stat-box">
+              <div class="rs-stat-val">${paymentPercent}%</div>
+              <div class="rs-stat-lbl">💰 Mention Payment</div>
+            </div>
+            <div class="rs-stat-box">
+              <div class="rs-stat-val">${ReputationEngine.formatDate(firstReport)}</div>
+              <div class="rs-stat-lbl">📅 First Reported</div>
+            </div>
+          </div>
+
+          <!-- Confidence Bar -->
+          <div class="rs-confidence-row">
+            <div class="rs-confidence-label">Scam Confidence</div>
+            <div class="rs-confidence-track">
+              <div class="rs-confidence-fill" id="confBar" style="width:0%;background:linear-gradient(90deg,${gradMap[classification.cls]});"></div>
+            </div>
+            <div class="rs-confidence-pct" style="color:${clsColor};">${confidencePct}%</div>
+          </div>
+          <div class="rs-confidence-row">
+            <div class="rs-confidence-label">Verified Reports</div>
+            <div class="rs-confidence-track">
+              <div class="rs-confidence-fill" id="verBar" style="width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);"></div>
+            </div>
+            <div class="rs-confidence-pct" style="color:#93c5fd;">${verifiedReports}/${totalReports}</div>
+          </div>
+
+          ${flagsHtml}
+          ${clusterHtml}
+        </div>`;
+
+            // Animate bars after render
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    document.getElementById('confBar').style.width = confidencePct + '%';
+                    document.getElementById('verBar').style.width = Math.round((verifiedReports / totalReports) * 100) + '%';
+                }, 100);
+            });
+        }
+
+        /* ── Render Community List ── */
+        function renderCommunityList() {
+            const reports = ReputationEngine.getRecentReports(6);
+            const list = document.getElementById('rsCommunityList');
+            list.innerHTML = reports.map(r => {
+                const dotCls = r.cls.cls === 'scam' ? 'dot-scam' : r.cls.cls === 'suspicious' ? 'dot-suspicious' : 'dot-safe';
+                const label = r.cls.label;
+                const labelColor = { Safe: '#10b981', Suspicious: '#f59e0b', 'Scam Likely': '#ef4444' }[label] || '#94a3b8';
+                return `
+          <div class="rs-community-item" onclick="quickSearch('${escHtml(r.name)}')" title="Click to search">
+            <div class="rs-community-left">
+              <div class="rs-community-status-dot ${dotCls}"></div>
+              <div class="rs-community-name">${escHtml(r.name)}</div>
+              ${r.surge && r.surge.isSurge ? `<span style="font-size:0.72rem;color:#fca5a5;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);padding:2px 10px;border-radius:100px;">⚠️ Surge</span>` : ''}
+              ${r.isUser ? `<span style="font-size:0.72rem;color:#93c5fd;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);padding:2px 10px;border-radius:100px;">New</span>` : ''}
+            </div>
+            <div class="rs-community-right">
+              <div class="rs-community-count">${r.reports} report${r.reports !== 1 ? 's' : ''}</div>
+              <div style="font-size:0.8rem;font-weight:700;color:${labelColor};">${r.cls.emoji} ${label}</div>
+            </div>
+          </div>`;
+            }).join('');
+        }
+
+        /* ── Report Form Submit ── */
+        document.getElementById('rsReportForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const companyName = document.getElementById('rf-company').value.trim();
+            if (!companyName) {
+                document.getElementById('rf-company').focus();
+                return;
+            }
+            const flags = [...document.querySelectorAll('input[name="flags"]:checked')].map(cb => cb.value);
+            const formData = {
+                companyName,
+                domain: document.getElementById('rf-domain').value.trim(),
+                email: document.getElementById('rf-email').value.trim(),
+                phone: document.getElementById('rf-phone').value.trim(),
+                upiId: document.getElementById('rf-upi').value.trim(),
+                proofUploaded: document.getElementById('rf-proof').checked,
+                description: document.getElementById('rf-desc').value.trim(),
+                flags,
+            };
+            ReputationEngine.submit(formData);
+            document.getElementById('rsFormInner').style.display = 'none';
+            document.getElementById('rsSubmitSuccess').style.display = 'block';
+            renderCommunityList();
+        });
+
+        function resetForm() {
+            document.getElementById('rsReportForm').reset();
+            document.getElementById('rsFormInner').style.display = 'block';
+            document.getElementById('rsSubmitSuccess').style.display = 'none';
+        }
+
+        /* ── Escape HTML ── */
+        function escHtml(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        /* ── Init ── */
+        renderCommunityList();
+    </script>
+</body>
+
+</html>
